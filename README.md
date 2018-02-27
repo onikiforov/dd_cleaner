@@ -17,7 +17,7 @@ OR
 
 Arguments:
 
-`-f` will clear without confiramtion
+`-f` will clear without confirmation
 
 `-d <directory>` specify top level directory to search for DerivedData, e.g. /Users/<username>/Projects. It's "~" by default
 
