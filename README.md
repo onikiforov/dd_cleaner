@@ -5,14 +5,15 @@ Searches for DerivedData folders is specified location and lears it's content if
 
 To use:
 1. `brew install coreutils` - needed to have 'gsort' shell command
-2. Download script
-3. Cd to folder with script and `python derived_data.py`
+2. `pip install tabulate` - needed for printing of founded directories info
+3. Download script
+4. Cd to folder with script and `python derived_data.py`
 
 OR
 
-3. `chmod +x derived_data.py`
-4. Add to PATH 
-5. `derived_data.py`
+4. `chmod +x derived_data.py`
+5. Add to PATH 
+6. `derived_data.py`
 
 Arguments:
 
