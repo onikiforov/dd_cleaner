@@ -5,21 +5,28 @@ Searches for DerivedData folders is specified location and clears it's content i
 
 To use:
 1. `brew install coreutils` - needed to have 'gsort' shell command
-2. `pip install tabulate` - needed for printing of founded directories info
-3. Download script
-4. Cd to folder with script and `python derived_data.py`
+2. `brew install findutils` - needed to have 'gxargs' shell command
+3. `pip install tabulate` - needed for printing of founded directories info
+4. Download script
+5. Cd to folder with script and `python derived_data.py`
 
 OR
 
-4. `chmod +x derived_data.py`
-5. Add to PATH 
-6. `derived_data.py`
+5. `chmod +x derived_data.py`
+6. Add to PATH 
+7. `derived_data.py`
 
 Arguments:
 
 `-f` will clear without confirmation
 
 `-d <directory>` specify top level directory to search for DerivedData, e.g. /Users/<username>/Projects. It's "~" by default
+
+`-l` will only list directories with derived data, without prompt to clear
+
+`-n <directory_name>` specify name of directory containing derived data (in case you use custom one), default is 'DerivedData'
+
+`-a` will clear all found locations, without prompt to select what locations to clear
 
 For example:
 `derived_data.py -f -d /Users/onikiforov/dd_test` will list all directories under "dd_test" that contain DerivedData and prompt to clear them without confirmation
