@@ -1,12 +1,20 @@
 #!/usr/bin/python
+import os
 from tabulate import tabulate
 import subprocess
 import time
 import argparse
+import sys
 
+
+"""
+Dependencies:
+brew install coreutils
+brew install findutils
+"""
 
 dd_dir_name = 'DerivedData'
-default_dir = '~'
+default_dir = os.path.expanduser('~')
 
 
 def execute_shell(command, working_directory=None, stdout=None, stderr=None):
@@ -25,37 +33,65 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-f',
-        action="store_true",
-        dest="force_flag",
+        action='store_true',
+        dest='force_flag',
         default=False,
-        help='Flag to delete DerivedData without confirmation, default is False'
+        help='Flag to clear DerivedData without confirmation, default is False'
     )
     parser.add_argument(
         '-d',
-        action="store",
-        dest="check_directory",
+        action='store',
+        dest='check_directory',
         default=default_dir,
         help='Top level directory to search for DerivedData, default is "~"'
+    )
+    parser.add_argument(
+        '-l',
+        action='store_true',
+        dest='list_flag',
+        default=False,
+        help='Flag to only list directories without prompt to clear, default is False'
+
+    )
+    parser.add_argument(
+        '-n',
+        action='store',
+        dest='dd_dir_name',
+        default=dd_dir_name,
+        help='DerivedData directory name in case you use custom one'
+    )
+    parser.add_argument(
+        '-a',
+        action='store_true',
+        dest='all_flag',
+        default=False,
+        help='Flag to clear all found DerivedData locations, default is False'
+
     )
 
     args = parser.parse_args()
 
-    return args.check_directory, args.force_flag
+    return args.check_directory, args.force_flag, args.list_flag, args.dd_dir_name, args.all_flag
 
 
-def get_list_of_derived_data_locations(check_dir_name):
-    print('Searching for DerivedData directories...')
+def get_list_of_derived_data_locations(check_dir_name, dd_dir_name):
+    print('Searching for {} directories...'.format(dd_dir_name))
     shell_result = execute_shell(
-        'find {} -type d -name {} | xargs du -sh | gsort -hr'.format(check_dir_name, dd_dir_name),
+        'find {} -type d -name {} | gxargs -d \'\n\' du -sh | gsort -hr'.format(check_dir_name, dd_dir_name),
         stdout=subprocess.PIPE
     )
 
-    return shell_result.splitlines()
+    print('\nSearch is completed.')
+    if shell_result:
+        return shell_result.splitlines()
+    else:
+        print('Nothing is found! Did you specify correct Derived Data folder name in case you use custom one?')
+        return None
 
 
 def clear_directory(dir_path):
     print('Deleting content of {}'.format(dir_path))
-    execute_shell('rm -rf {}/*'.format(dir_path))
+    execute_shell('rm -rf "{}"/*'.format(dir_path))
 
 
 def prompt_to_delete():
@@ -63,17 +99,22 @@ def prompt_to_delete():
     return response.lower() in ('yes', 'y')
 
 
-def list_delete_options_dict(sorted_list):
-    print('\nSearch is completed.\nPlease select directories(s) to clear:\n')
+def list_delete_options_dict(sorted_list, list_only_flag, all_flag):
+    print('\nPlease select directories(s) to clear:\n')
     print(tabulate([(item['index'], item['size'], item['path']) for item in sorted_list],
                    headers=['Index', 'Size', 'Path']))
 
-    response = raw_input('\nEnter coma-separated numbers to clear specific directories, 0 to clear all directories, '
-                         'or negative numbers to exclude specific directories from clearing targets\n')
+    if list_only_flag:
+        return None
+    if all_flag:
+        indexes = [0]
+    else:
+        response = raw_input('\nEnter coma-separated numbers to clear specific directories, 0 to clear all directories,'
+                             'or negative numbers to exclude specific directories from clearing targets\n')
 
-    indexes = response.split(',')
+        indexes = response.split(',')
 
-    indexes = [int(x.strip(' ')) for x in indexes]
+        indexes = [int(x.strip(' ')) for x in indexes]
 
     if len(indexes) == 1 and indexes[0] == 0:
         sorted_list = [d['path'] for d in sorted_list]
@@ -123,16 +164,17 @@ def form_dd_locations_dict(list_of_derived_data_locations):
 
 def main():
     start_time = time.time()
-
-    check_directory, force_flag = parse_args()
-    list_of_derived_data_locations = get_list_of_derived_data_locations(check_directory)
+    check_directory, force_flag, list_flag, dd_dir_name, all_flag = parse_args()
+    list_of_derived_data_locations = get_list_of_derived_data_locations(check_directory, dd_dir_name)
+    if not list_of_derived_data_locations:
+        sys.exit(0)
     dd_loc_list = form_dd_locations_dict(list_of_derived_data_locations)
 
     formed_dict = None
 
     while not formed_dict:
         try:
-            formed_dict = list_delete_options_dict(dd_loc_list)
+            formed_dict = list_delete_options_dict(dd_loc_list, list_flag, all_flag)
         except IndexError:
             print('Make sure you didn\'t input number outside the scope!\n')
             continue
@@ -150,7 +192,7 @@ def main():
         else:
             print('\nNothing was cleared!')
 
-    print("\n--- Execution time: {} seconds ---".format(time.time() - start_time))
+    print('\n--- Execution time: {} seconds ---'.format(time.time() - start_time))
 
 
 if __name__ == '__main__':
